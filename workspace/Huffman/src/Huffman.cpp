@@ -254,13 +254,12 @@ public:
 int main(int argc, char *argv[]){
 
 	HuffmanTree hf;
-	string input="hey.txt", output="heycompress.txt";
+	string input, output;
 	string line;
 	ofstream writefile;
 	ifstream readfile; // ifstream - stream class to read from files
 
 
-/* commented out for redundancy reasons - undo for final edit
 	if(argc < 3){
 		cout << "Enter a file to read from: ";
 		cin >> input;
@@ -271,7 +270,7 @@ int main(int argc, char *argv[]){
 		input = argv[1];
 		output = argv[2];
 	}
-*/
+
 
 	writefile.open(output.c_str());
 	readfile.open(input.c_str());	// string1.c_str() converts strings into const char*
@@ -294,7 +293,6 @@ int main(int argc, char *argv[]){
 	while(getline(readfile, line)){
 		hf.filewrite(line, writefile);
 	}
-
 
 	readfile.close();
 	writefile.close();
