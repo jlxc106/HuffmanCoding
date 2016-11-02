@@ -1,1 +1,7 @@
- b c   c      bc 
+a 
+bb
+c  cc
+dd
+dd   
+
+
