@@ -64,12 +64,16 @@ struct OrderByFreq
 	}
 };
 
+//class used to encode
 class HuffmanTree{
 
 public:
 	HuffmanTree(){
 		buffer_position=0;
 		root = NULL;
+		for(unsigned int i=0; i<8; i++){
+			buffer[i]=0;
+		}
 	};
 
 	~HuffmanTree(){
@@ -88,12 +92,11 @@ public:
 	}
 
 	//global variables
-	int buffer[8]={ 0 };
+	int buffer[8];
 	node *root;
 	priority_queue<node *,vector<node *> ,OrderByFreq > mypq;
 	vector<node *> myvec;
 	unsigned int buffer_position;
-	int arrayCount=0;
 
 	/*
 	 * Method: readString
@@ -105,13 +108,13 @@ public:
 		for(unsigned int i =0; i< s.length(); i++){ // length of string
 			readChar(s.at(i));
 		}
-		readChar(char(3));
+		readChar(char(3));	//manually call "EOF character" - refer to ASCII table
 	}
 
 	/*
 	 * Method: readChar
 	 * Parameter(s): char c - individual char that will be recorded
-	 * Description: helper method(called in readIt())
+	 * Description: helper method(called in readString())
 	 * 				1)increases the frequency of node containing char or
 	 * 				2)adds a new node to vector
 	 * Returns: void
@@ -124,7 +127,7 @@ public:
 		}
 		else{
 			for(unsigned int i=0; i < myvec.size(); i++){
-				if(myvec[i]->key == c){		//case 1)
+				if(myvec[i]->key == c){		//case 1
 					myvec[i]->freq++;
 					break;
 				}
@@ -159,8 +162,9 @@ public:
 		for(unsigned int i=0; i< myvec.size(); i++)
 			mypq.push(myvec[i]);
 	}
+
 /*
- * Method: poptest() -- just for testing
+ * Method: poptest() - just for testing
  */
 	void poptest(){
 		while(!mypq.empty()){
@@ -189,18 +193,20 @@ public:
 		}
 		root = mypq.top();
 	}
+
 /*
  * Method: printConv() -- dummy function to call printConv(node, string)
  */
 	void printConv(fstream &write_file){
-		write_file << myvec.size() <<"\n";
+		write_file << myvec.size() <<"\n";	//first line of compressed file - size of table
 		printConv(root, "", write_file);
 	}
 
 /*
  * Method: printConv
  * Parameters: node *n, string code
- * Description: Access method - print the conversion code
+ * Description: Access method - 1) print the conversion table
+ * 								2) assign conversion code variable at the node level
  * Returns: void
  */
 	void printConv(node *n, string code, fstream &write_file){
@@ -217,7 +223,7 @@ public:
 	}
 
 /*
- * Method: getit - access method - only for testing
+ * Method: getit - just for testing
  */
 	void getit(){
 		cout << "root" << endl;
@@ -245,7 +251,8 @@ public:
 		for(unsigned int i =0; i< s.length(); i++){ // length of string
 			writeBuffer(s.at(i), write_file);
 		}
-		writeBuffer((char)3, write_file);
+		writeBuffer((char)3, write_file);	//manually write the "EOF character" to be written
+											//in the last byte of compressed file
 	}
 
 	/*
@@ -283,23 +290,19 @@ public:
  */
 	void debuffer(fstream &write_file){
 		int temp=0;
-		static int aay=0;
 		for(int i=0; i< 8; i++){
-//			cout << "buffer[i]: "<< buffer[i]<<endl;
 			temp += (buffer[i]*pow(2, (7-i)));
 			buffer[i]=0;
 		}
 		write_file << char(temp);
-		aay++;
 	}
-
-
-
-
 };
 
+//class used to decode
 class HuffmanDecode{
 public:
+
+	//constructor
 	HuffmanDecode(){
 		root = NULL;
 		buffer_position=0;
@@ -308,6 +311,7 @@ public:
 		}
 	};
 
+	//destructor
 	~HuffmanDecode(){
 		deleteNode(root);
 	};
@@ -323,12 +327,18 @@ public:
 		N = NULL;
 	}
 
-
+	//global variables
 	priority_queue<node*, vector<node*>, OrderByFreq> mypq;
 	node *root;
 	int buffer[8];
 	int buffer_position;
 
+	/*
+	 * Method: build()
+	 * Parameter(s): void
+	 * Description: A method to build the Huffman Tree & set to root.
+	 * Returns: void
+	 */
 	void build(){
 		while(mypq.size() > 1){
 			node *a = mypq.top();	//left child - 0
@@ -344,17 +354,19 @@ public:
 	}
 
 	/*
-	 *
-	 *
+	 *Method: readtable
+	 *Parameter(s): fstream &write_file(file to write),
+	 *				string s(string stream from compressed file)
+	 *Description: Reads the table from compressed file
+	 *				(character + " " + frequency format)
+	 *Returns: void
 	 */
 	void readtable(fstream &write_file, string s){
 		int freq = 0;
-		string conv_code="";
 		if(s.size()==0){	//corner case for new line
-			//cout << "entered selective if statement"<<endl;
 			string new_s;
 			s[0]='\n';
-			getline(write_file, new_s);
+			getline(write_file, new_s);		//read the next line for frequency
 			for(unsigned int i=1; i<new_s.size();i++)
 				freq = freq*10 + (new_s[i]-'0');
 		}
@@ -363,52 +375,47 @@ public:
 				freq =freq*10 + (s[i]-'0');
 			}
 		}
-		node *temp = new node(s[0], freq);
-		//conv_table.push_back(temp);
+		node *temp = new node(s[0], freq);	//create a new node from table
 		mypq.push(temp);
-		cout << "c: "<< s[0]<< " freq: " << freq <<endl;
 	}
 
+
+	/*
+	 * Method: decode
+	 * Parameter(s): string s(reads from compressed file)
+	 * 				fstream &write_file(write to the recover file)
+	 * Description: Writes to write_file using newly created Huffman tree.
+	 * Returns: void
+	 */
 	void decode(string s, fstream &write_file){
 		bool broken = false;
 		node *temp = root;
 		for(unsigned int i=0; i<s.size();i++){
-			//convert s[i] to int
+			//unsigned char & int help convert into number range 0-255
 			unsigned int wut = (unsigned int)(unsigned char)s[i];
-			for(unsigned int j=0; j<8; j++){
+			for(unsigned int j=0; j<8; j++){	//refill the buffer
 				buffer[j]=wut/(pow(2,7-j));
-				if(buffer[j] > 1 || buffer[j] < 0){
-					//cout << "i: "<< i << " j: " << j << " WTF" << endl;
-					cout << "Buffer[j]: "<< buffer[j] <<endl;
-				}
 				wut = wut % (int)pow(2,7-j);
 			}
-			for(unsigned int k=0; k<8; k++){
-				if(buffer[k]==0){
-					cout << "still broken?"<<endl;
-					//go left
+			for(unsigned int k=0; k<8; k++){	//read the buffer
+				if(buffer[k]==0){		//go left
 					if(temp->leftchild->key != '\0'){
-						if(temp->leftchild->key ==(char)3){
+						if(temp->leftchild->key ==(char)3){	//EOF marker
 							broken = true;
-							cout << "broken" << endl;
-							break;
+							break;			//remainder of last byte is garbage
 						}
-						//write_file.put(temp->leftchild->key);
 						write_file << temp->leftchild->key;
 						temp = root;
 					}
 					else
 						temp=temp->leftchild;
 				}
-				else{
-					//go right
+				else{					//go right
 					if(temp->rightchild->key != '\0'){
 						if(temp->rightchild->key== (char)3){
-							cout <<"broken"<<endl;
 							broken = true;
 							break;
 						}
-						//write_file.put(temp->leftchild->key);
 						write_file << temp->rightchild->key;
 						temp = root;
 					}
@@ -421,6 +428,9 @@ public:
 		}
 	}
 
+	/*
+	 * getit() - just for testing
+	 */
 	void getit(){
 		cout << "root" << endl;
 		cout << root->freq << endl;
@@ -438,7 +448,9 @@ public:
 		cout << root ->rightchild->leftchild->freq<<endl;
 		cout << root ->rightchild->leftchild->key<<endl;
 	}
-
+/*
+ * poptest() - just for testing
+ */
 	void poptest(){
 		while(!mypq.empty()){
 		cout << mypq.top() -> key << "\t";
@@ -448,18 +460,22 @@ public:
 	}
 };
 
+ifstream::pos_type filesize(const char* filename){
+	std::ifstream in(filename, std::ios::binary| std::ios::ate);
+	return in.tellg();
+}
+
 
 int main(int argc, char *argv[]){
 
 	HuffmanTree hf;
-	string input="hello.txt", output="hellocompress.txt", new_input="hello_new.txt";
-//	string input="big.txt", output="bigcompress.txt", new_input="big_new.txt";
+	string input, output, new_input;
 	string line;
 	fstream writefile;
 	fstream uncompressfile;	//duplicate file of readfile - remake of original file
 	ifstream readfile; // ifstream - stream class to read from files
 
-/*uncomment later
+
 	if(argc < 4){
 		cout << "Enter a file to read from: ";
 		cin >> input;
@@ -473,7 +489,7 @@ int main(int argc, char *argv[]){
 		output = argv[2];
 		new_input = argv[3];
 	}
-*/
+
 
 	//opens three files
 	writefile.open(output.c_str());
@@ -492,13 +508,12 @@ int main(int argc, char *argv[]){
 
 	//transfer to priority queue here
 	hf.transferDB();
-	hf.build();	//build the huffman tree
+	hf.build();
 
 	//prints the header table - in compressed file
 	hf.printConv(writefile);
 
 	int write_length1 = writefile.tellg();
-//	cout << write_length1<<endl;
 
 	//reset the file iterator to beginning and start writing the compressed file
 	readfile.clear();
@@ -506,20 +521,13 @@ int main(int argc, char *argv[]){
 	hf.filewrite((string)buffer, writefile);
 
 	int write_length2 = writefile.tellg();
-//	cout << write_length2<<endl;
 
 
 	//			Decoding
-/*
-	writefile.clear();
-	writefile.seekg(0, ios::end);
-	int writefile_length2 = writefile.tellg();
-
-*/
-//	writefile.clear();
 	writefile.seekg(0, writefile.beg);
 
 	HuffmanDecode hd;
+
 	//read only the very first line(contains the size of Huffman table)
 	getline(writefile,line);
 	unsigned int number_lines = atoi(line.c_str());
@@ -533,65 +541,26 @@ int main(int argc, char *argv[]){
 	hd.build();	//builds the huffman tree
 
 
-
-	//writefile.gcount();
-
-
-
-//	int writefile_length1 = writefile.tellg();
-
-//	int write_length = (write_length2 - write_length1);
-
-//	char *buffer2 = new char[write_length];
-//	writefile.read(buffer2, (write_length));
-
-
-
-
-//	cout << buffer2<<endl;
-
 	string S = "";
-
-//	writefile >> S;
-//	hd.decode(S, uncompressfile);
 
 	while(getline(writefile, line)){
 		S.append(line.append("\n"));
 	}
 	hd.decode(S, uncompressfile);
-	cout << S << endl;
 
 
-	//hd.decode(line, uncompressfile);
+	int compressed_size = filesize(output.c_str());
+	int original_size = filesize(input.c_str());
 
-//	hd.decode((string)buffer2, uncompressfile);
-
-//	cout<<writefile.peek()<<endl;
-
-	//hf.getit();
-	//hd.getit();
-
-
-
-
-
-//
-//	while(getline(writefile, line)){
-//		hd.decode(line, uncompressfile);
-//	}
-
-
-
-
-
-
-
-
+	//close files
 	uncompressfile.close();
 	readfile.close();
 	writefile.close();
 
-
 	delete buffer;
-//	delete buffer2;
+
+	cout << "done!\nCheck " << output << " file for compressed file." <<endl;
+	cout << new_input << " is your recovered file." << endl;
+	cout << "Compression rate: " << (double)compressed_size/original_size * 100<< "%" << endl;
+
 }
