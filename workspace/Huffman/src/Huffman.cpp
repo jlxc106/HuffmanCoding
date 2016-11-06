@@ -492,9 +492,9 @@ int main(int argc, char *argv[]){
 
 
 	//opens three files
-	writefile.open(output.c_str());
-	readfile.open(input.c_str());	// string1.c_str() converts strings into const char*
-	uncompressfile.open(new_input.c_str());
+	writefile.open(output.c_str(),fstream::out | fstream::in | fstream::trunc);
+	readfile.open(input.c_str(), fstream::out);	// string1.c_str() converts strings into const char*
+	uncompressfile.open(new_input.c_str(), fstream::out | fstream::in | fstream::trunc);
 
 	//			Encoding
 	readfile.seekg(0, ios::end);
