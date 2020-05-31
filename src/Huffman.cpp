@@ -557,7 +557,7 @@ int main(int argc, char *argv[]){
 	readfile.close();
 	writefile.close();
 
-	delete buffer;
+	delete[] buffer;
 
 	cout << "done!\nCheck " << output << " file for compressed file." <<endl;
 	cout << new_input << " is your recovered file." << endl;
